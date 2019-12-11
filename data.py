@@ -6,7 +6,7 @@ from scipy.sparse import coo_matrix
 import numpy as np
 from torch_geometric.data import Data
 
-def load_data(N=40):
+def load_bbbp(N=40):
     df = pd.read_csv('bbbp/BBBP.csv', index_col='num')
     feature_matrices = []  # np.zeros((len(df), N, 1))
     adj_matrices = []  # np.zeros((len(df), N, N))

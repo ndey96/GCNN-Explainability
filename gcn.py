@@ -5,7 +5,9 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.datasets import Planetoid, TUDataset
 import torch_geometric.transforms as T
-from torch_geometric.nn import GCNConv, ChebConv  # noqa
+from torch_geometric.nn import GCNConv, ChebConv, global_mean_pool
+from data import load_data
+from torch_geometric.data import DataLoader
 
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--use_gdc', action='store_true',
@@ -18,7 +20,9 @@ H_1 = 128
 H_2 = 256
 H_3 = 512
 
-dataset = TUDataset(root='/tmp/Tox21_AR', name='Tox21_AR')
+# dataset = TUDataset(root='/tmp/Tox21_AR', name='Tox21_AR')
+dataset = load_bbbp(N)
+loader = DataLoader(dataset, batch_size=32, shuffle=True)
 
 class Net(torch.nn.Module):
     def __init__(self):
@@ -27,13 +31,13 @@ class Net(torch.nn.Module):
         self.conv2 = GCNConv(H_1, H_2)
         self.conv3 = GCNConv(H_2, H_3)
 
-    def forward(self):
-        x, edge_index, edge_weight = data.x, data.edge_index, data.edge_attr
-        x = F.relu(self.conv1(x, edge_index, edge_weight))
-        x =
-        x = F.dropout(x, training=self.training)
-        x = self.conv2(x, edge_index, edge_weight)
-        return F.log_softmax(x, dim=1)
+    def forward(self, data):
+        h0, edge_index, edge_weight = data.x, data.edge_index, data.edge_attr
+        h1 = F.relu(self.conv1(h0, edge_index, edge_weight))
+        h2 = F.relu(self.conv2(h1, edge_index, edge_weight))
+        h3 = F.relu(self.conv2(h2, edge_index, edge_weight))
+        h4 = global_mean_pool(h3)
+        return F.sigmoid(h4, dim=1)
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
