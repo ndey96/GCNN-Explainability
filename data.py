@@ -48,10 +48,11 @@ def load_bbbp(N=40):
     for i in range(len(labels)):
         X = torch.from_numpy(feature_matrices[i]).float()
         A = adj_matrices[i]
-        y = torch.Tensor(labels[i]).float()
+        y = torch.Tensor([[labels[i]]]).float()
+        # y.view(-1,1) # reshape
         A_coo = coo_matrix(A)
         edge_index = torch.from_numpy(np.vstack([A_coo.row, A_coo.col])).long()
         edge_weight = torch.from_numpy(A_coo.data).float()
         dataset.append(Data(x=X, edge_index=edge_index, edge_attr=edge_weight, y=y))
-
+    print(y, labels[i])
     return dataset
