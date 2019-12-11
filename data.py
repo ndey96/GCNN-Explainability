@@ -5,13 +5,16 @@ from sklearn.preprocessing import OneHotEncoder
 from scipy.sparse import coo_matrix
 import numpy as np
 from torch_geometric.data import Data
+import torch
+from tqdm import tqdm
 
 def load_bbbp(N=40):
+    print('Loading data...')
     df = pd.read_csv('bbbp/BBBP.csv', index_col='num')
     feature_matrices = []  # np.zeros((len(df), N, 1))
     adj_matrices = []  # np.zeros((len(df), N, N))
     labels = []  # np.zeros((len(df), 1))
-    for i in range(len(df)):
+    for i in tqdm(range(len(df))):
         row = df.iloc[i]
         mol = Chem.MolFromSmiles(row.smiles)
         if mol is None:
@@ -43,12 +46,12 @@ def load_bbbp(N=40):
 
     dataset = []
     for i in range(len(labels)):
-        X = feature_matrices[i]
+        X = torch.from_numpy(feature_matrices[i]).float()
         A = adj_matrices[i]
-        y = labels[i]
+        y = torch.Tensor(labels[i]).float()
         A_coo = coo_matrix(A)
-        edge_index = np.vstack([A_coo.row, A_coo.col])
-        edge_weight = A_coo.data
+        edge_index = torch.from_numpy(np.vstack([A_coo.row, A_coo.col])).long()
+        edge_weight = torch.from_numpy(A_coo.data).float()
         dataset.append(Data(x=X, edge_index=edge_index, edge_attr=edge_weight, y=y))
 
     return dataset
