@@ -54,5 +54,5 @@ def load_bbbp(N=40):
         edge_index = torch.from_numpy(np.vstack([A_coo.row, A_coo.col])).long()
         edge_weight = torch.from_numpy(A_coo.data).float()
         dataset.append(Data(x=X, edge_index=edge_index, edge_attr=edge_weight, y=y))
-    print(y, labels[i])
+
     return dataset
