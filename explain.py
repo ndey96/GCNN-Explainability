@@ -31,7 +31,6 @@ model.load_state_dict(torch.load('gcn_state_dict.pt'))
 model.eval()
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 
 print(model)
 breakpoint()
