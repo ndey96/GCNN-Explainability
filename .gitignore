@@ -1,3 +1,6 @@
 .ipynb_checkpoints/
 .idea/
 __pycache__/
+*.pt
+*.svg
+*.png

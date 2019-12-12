@@ -14,8 +14,10 @@ def load_bbbp(N=40):
     feature_matrices = []  # np.zeros((len(df), N, 1))
     adj_matrices = []  # np.zeros((len(df), N, N))
     labels = []  # np.zeros((len(df), 1))
+    smiles = []
     for i in tqdm(range(len(df))):
         row = df.iloc[i]
+        smiles.append(row.smiles)
         mol = Chem.MolFromSmiles(row.smiles)
         if mol is None:
             continue
@@ -41,18 +43,27 @@ def load_bbbp(N=40):
         labels.append(row.p_np)
 
     enc = OneHotEncoder(handle_unknown='ignore', sparse=False)
-    feature_matrices = enc.fit_transform(feature_matrices)
-    feature_matrices = np.reshape(feature_matrices, (-1, N, 8))
+    one_hot_feature_matrices = enc.fit_transform(feature_matrices)
+    one_hot_feature_matrices = np.reshape(one_hot_feature_matrices, (-1, N, 8))
+
+    breakpoint()
 
     dataset = []
     for i in range(len(labels)):
-        X = torch.from_numpy(feature_matrices[i]).float()
+        X = torch.from_numpy(one_hot_feature_matrices[i]).float()
         A = adj_matrices[i]
         y = torch.Tensor([[labels[i]]]).float()
         # y.view(-1,1) # reshape
         A_coo = coo_matrix(A)
         edge_index = torch.from_numpy(np.vstack([A_coo.row, A_coo.col])).long()
         edge_weight = torch.from_numpy(A_coo.data).float()
-        dataset.append(Data(x=X, edge_index=edge_index, edge_attr=edge_weight, y=y))
+        dataset.append(Data(x=X,
+                            edge_index=edge_index,
+                            edge_attr=edge_weight,
+                            y=y,
+                            smiles=smiles[i],
+                            A=A,
+                            atomic_nums=feature_matrices[i],
+                            num=row.index))
 
     return dataset
