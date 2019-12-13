@@ -25,7 +25,6 @@ def img_for_mol(mol, atom_weights=[]):
     # print(atom_weights)
     highlight_kwargs = {}
     if len(atom_weights) > 0:
-        atom_weights = MinMaxScaler().fit_transform(np.array(atom_weights).reshape(-1,1)).reshape(-1,)
         norm = matplotlib.colors.Normalize(vmin=-1, vmax=1)
         cmap = cm.get_cmap('bwr')
         plt_colors = cm.ScalarMappable(norm=norm, cmap=cmap)
@@ -78,17 +77,20 @@ def plot_explanations(model, data):
     axes[1][0].set_title('Saliency Map')
     input_grads = model.input.grad.view(40, 8)
     saliency_map_weights = saliency_map(input_grads)[:mol.GetNumAtoms()]
-    axes[1][0].imshow(img_for_mol(mol, atom_weights=saliency_map_weights))
+    scaled_saliency_map_weights = MinMaxScaler(feature_range=(0,1)).fit_transform(np.array(saliency_map_weights).reshape(-1, 1)).reshape(-1, )
+    axes[1][0].imshow(img_for_mol(mol, atom_weights=scaled_saliency_map_weights))
 
     axes[1][1].set_title('Grad-CAM')
     final_conv_acts = model.final_conv_acts.view(40, 512)
     final_conv_grads = model.final_conv_grads.view(40, 512)
     grad_cam_weights = grad_cam(final_conv_acts, final_conv_grads)[:mol.GetNumAtoms()]
-    # breakpoint()
-    axes[1][1].imshow(img_for_mol(mol, atom_weights=grad_cam_weights))
+    scaled_grad_cam_weights = MinMaxScaler(feature_range=(0,1)).fit_transform(np.array(grad_cam_weights).reshape(-1, 1)).reshape(-1, )
+    axes[1][1].imshow(img_for_mol(mol, atom_weights=scaled_grad_cam_weights))
 
-    axes[1][2].set_title('c-EB')
-    axes[1][2].imshow(img_for_mol(mol, atom_weights=np.arange(0, 1, 1 / 20)))
+    axes[1][2].set_title('New Grad-CAM')
+    new_grad_cam_weights = new_grad_cam(final_conv_acts, final_conv_grads)[:mol.GetNumAtoms()]
+    scaled_new_grad_cam_weights = MinMaxScaler(feature_range=(-1,1)).fit_transform(np.array(new_grad_cam_weights).reshape(-1, 1)).reshape(-1, )
+    axes[1][2].imshow(img_for_mol(mol, atom_weights=scaled_new_grad_cam_weights))
 
     plt.savefig(f'explanations/{mol_num}.png')
     plt.close('all')
@@ -96,7 +98,7 @@ def plot_explanations(model, data):
 def saliency_map(input_grads):
     # print('saliency_map')
     node_saliency_map = []
-    for n in range(input_grads.shape[1]):
+    for n in range(input_grads.shape[1]): # nth node
         node_grads = input_grads[n,:]
         node_saliency = torch.norm(F.relu(node_grads)).item()
         node_saliency_map.append(node_saliency)
@@ -109,7 +111,15 @@ def grad_cam(final_conv_acts, final_conv_grads):
     for n in range(final_conv_acts.shape[0]): # nth node
         node_heat = F.relu(alphas @ final_conv_acts[n]).item()
         node_heat_map.append(node_heat)
-        # breakpoint()
+    return node_heat_map
+
+def new_grad_cam(final_conv_acts, final_conv_grads):
+    # print('new_grad_cam')
+    node_heat_map = []
+    alphas = torch.mean(final_conv_grads, axis=0) # mean gradient for each feature (512x1)
+    for n in range(final_conv_acts.shape[0]): # nth node
+        node_heat = (alphas @ final_conv_acts[n]).item()
+        node_heat_map.append(node_heat)
     return node_heat_map
 
 dataset = load_bbbp(hp.N)
@@ -141,3 +151,4 @@ for data in tqdm(loader):
         continue
     # breakpoint()
     total_loss += loss.item() * data.num_graphs
+
