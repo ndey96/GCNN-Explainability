@@ -1,4 +1,4 @@
-epochs = 200
+epochs = 50
 N = 40
 H_0 = 8
 H_1 = 128
@@ -7,3 +7,4 @@ H_3 = 512
 train_frac = 0.8
 batch_size = 32
 shuffle_seed = 0
+learning_rate = 0.02
