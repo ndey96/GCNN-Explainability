@@ -10,14 +10,16 @@ from tqdm import tqdm
 
 def load_bbbp(N=40):
     print('Loading data...')
-    df = pd.read_csv('bbbp/BBBP.csv', index_col='num')
+    df = pd.read_csv('bbbp/BBBP.csv')
     feature_matrices = []  # np.zeros((len(df), N, 1))
     adj_matrices = []  # np.zeros((len(df), N, N))
     labels = []  # np.zeros((len(df), 1))
-    smiles = []
+    smiles_list = []
+    nums = []
     for i in tqdm(range(len(df))):
         row = df.iloc[i]
-        smiles.append(row.smiles)
+        nums.append(row.num)
+        smiles_list.append(row.smiles)
         mol = Chem.MolFromSmiles(row.smiles)
         if mol is None:
             continue
@@ -46,24 +48,24 @@ def load_bbbp(N=40):
     one_hot_feature_matrices = enc.fit_transform(feature_matrices)
     one_hot_feature_matrices = np.reshape(one_hot_feature_matrices, (-1, N, 8))
 
-    breakpoint()
-
     dataset = []
     for i in range(len(labels)):
         X = torch.from_numpy(one_hot_feature_matrices[i]).float()
-        A = adj_matrices[i]
+        A = torch.from_numpy(adj_matrices[i]).float()
         y = torch.Tensor([[labels[i]]]).float()
-        # y.view(-1,1) # reshape
+        mol_num = torch.Tensor([nums[i]])
         A_coo = coo_matrix(A)
         edge_index = torch.from_numpy(np.vstack([A_coo.row, A_coo.col])).long()
         edge_weight = torch.from_numpy(A_coo.data).float()
+        # breakpoint()
         dataset.append(Data(x=X,
                             edge_index=edge_index,
                             edge_attr=edge_weight,
                             y=y,
-                            smiles=smiles[i],
+                            # smiles=smiles_list[i],
                             A=A,
-                            atomic_nums=feature_matrices[i],
-                            num=row.index))
+                            # atomic_nums=feature_matrices[i],
+                            mol_num=mol_num
+                            ))
 
     return dataset

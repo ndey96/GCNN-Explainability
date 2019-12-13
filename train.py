@@ -3,12 +3,12 @@ import torch.nn.functional as F
 from data import load_bbbp
 from torch_geometric.data import DataLoader
 import numpy as np
-from random import shuffle
 from models import GCN
 import hyperparameters as hp
+import random
 
 dataset = load_bbbp(hp.N)
-shuffle(dataset)
+random.Random(hp.shuffle_seed).shuffle(dataset)
 split_idx = int(np.floor(len(dataset)*hp.train_frac))
 train_dataset = dataset[:split_idx]
 test_dataset = dataset[split_idx:]

@@ -6,3 +6,4 @@ H_2 = 256
 H_3 = 512
 train_frac = 0.8
 batch_size = 32
+shuffle_seed = 0
