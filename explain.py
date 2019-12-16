@@ -87,10 +87,9 @@ def plot_explanations(model, data):
     scaled_grad_cam_weights = MinMaxScaler(feature_range=(0,1)).fit_transform(np.array(grad_cam_weights).reshape(-1, 1)).reshape(-1, )
     axes[1][1].imshow(img_for_mol(mol, atom_weights=scaled_grad_cam_weights))
 
-    axes[1][2].set_title('New Grad-CAM')
-    new_grad_cam_weights = new_grad_cam(final_conv_acts, final_conv_grads)[:mol.GetNumAtoms()]
-    scaled_new_grad_cam_weights = MinMaxScaler(feature_range=(-1,1)).fit_transform(np.array(new_grad_cam_weights).reshape(-1, 1)).reshape(-1, )
-    axes[1][2].imshow(img_for_mol(mol, atom_weights=scaled_new_grad_cam_weights))
+    axes[1][2].set_title('UGrad-CAM')
+    ugrad_cam_weights = ugrad_cam(mol, final_conv_acts, final_conv_grads)
+    axes[1][2].imshow(img_for_mol(mol, atom_weights=ugrad_cam_weights))
 
     plt.savefig(f'explanations/{mol_num}.png')
     plt.close('all')
@@ -113,14 +112,18 @@ def grad_cam(final_conv_acts, final_conv_grads):
         node_heat_map.append(node_heat)
     return node_heat_map
 
-def new_grad_cam(final_conv_acts, final_conv_grads):
+def ugrad_cam(mol, final_conv_acts, final_conv_grads):
     # print('new_grad_cam')
     node_heat_map = []
     alphas = torch.mean(final_conv_grads, axis=0) # mean gradient for each feature (512x1)
     for n in range(final_conv_acts.shape[0]): # nth node
         node_heat = (alphas @ final_conv_acts[n]).item()
         node_heat_map.append(node_heat)
-    return node_heat_map
+
+    node_heat_map = np.array(node_heat_map[:mol.GetNumAtoms()]).reshape(-1, 1)
+    pos_node_heat_map = MinMaxScaler(feature_range=(0,1)).fit_transform(node_heat_map*(node_heat_map >= 0)).reshape(-1,)
+    neg_node_heat_map = MinMaxScaler(feature_range=(-1,0)).fit_transform(node_heat_map*(node_heat_map < 0)).reshape(-1,)
+    return pos_node_heat_map + neg_node_heat_map
 
 dataset = load_bbbp(hp.N)
 random.Random(hp.shuffle_seed).shuffle(dataset)
@@ -146,7 +149,8 @@ for data in tqdm(loader):
     loss.backward()
     try:
         plot_explanations(model, data)
-    except ValueError as e:
+    # except ValueError as e:
+    except Exception as e:
         print(e)
         continue
     # breakpoint()

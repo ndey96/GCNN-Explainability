@@ -47,7 +47,6 @@ def load_bbbp(N=40):
     enc = OneHotEncoder(handle_unknown='ignore', sparse=False)
     one_hot_feature_matrices = enc.fit_transform(feature_matrices)
     one_hot_feature_matrices = np.reshape(one_hot_feature_matrices, (-1, N, 8))
-
     dataset = []
     for i in range(len(labels)):
         X = torch.from_numpy(one_hot_feature_matrices[i]).float()
