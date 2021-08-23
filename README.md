@@ -3,6 +3,8 @@ Unofficial implementation of ["Explainability Methods for Graph Convolutional Ne
 
 ![2](https://user-images.githubusercontent.com/10405248/70907972-2dcc9280-1fd8-11ea-820a-f4be4521f8be.png)
 
-To train a GCNN on the BBBP dataset and save the model weights: `python train.py`
+To train a GCNN on the BBBP dataset and save the model weights: `python train.py`. 
+
+You can download pretrained weights [here](https://drive.google.com/file/d/14fhUmNzOgz4JyvdDCtMTnfLfVnv4A9Es/view?usp=sharing).
 
 To load the weights of a trained GCNN and generate explanations: `python explain.py`
