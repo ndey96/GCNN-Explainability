@@ -97,7 +97,7 @@ def plot_explanations(model, data):
 def saliency_map(input_grads):
     # print('saliency_map')
     node_saliency_map = []
-    for n in range(input_grads.shape[1]): # nth node
+    for n in range(input_grads.shape[0]): # nth node
         node_grads = input_grads[n,:]
         node_saliency = torch.norm(F.relu(node_grads)).item()
         node_saliency_map.append(node_saliency)
