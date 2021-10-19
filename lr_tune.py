@@ -1,3 +1,5 @@
+# Based on https://fastai1.fast.ai/callbacks.lr_finder.html
+
 import torch
 import torch.nn.functional as F
 from data import load_bbbp
